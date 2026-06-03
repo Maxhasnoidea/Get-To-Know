@@ -1,0 +1,11 @@
+cd directory
+cd "~/Desktop/Week 6 Toturial"
+cd ~/Desktop/"Week 6 Toturial"
+
+conda env create -f environment.yml
+
+python 01_handtest.py
+python3 01_handtest.py
+
+cd ~/Desktop/"Week 8 Mood Experiment " && conda activate mood_detection && python 02_mood_detection.py &
+
