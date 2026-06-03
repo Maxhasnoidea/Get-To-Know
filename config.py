@@ -12,8 +12,8 @@ RTDE_FREQUENCY = 50  # Hz — servoL command rate
 # ============================================================================
 # CAMERA
 # ============================================================================
-CAM_INDEX = 0
-CAM_W, CAM_H = 640, 480
+CAM_INDEX = 1  # USB camera (0=built-in, 1=USB, 2=USB if multiple)
+CAM_W, CAM_H = 1280, 720  # Display resolution (good balance for GUI + content)
 
 # ============================================================================
 # WORKSPACE (absolute bounds in meters)

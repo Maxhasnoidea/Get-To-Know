@@ -51,7 +51,7 @@ class FaceControllerApp(tk.Tk):
         self.configure(bg="#1a1a1a")
 
         self.detector   = FaceDetectorWrapper()
-        self.emotion    = EmotionServiceClient(weights_path='./fer2013_weights.pth')  # PyTorch with FER2013 weights
+        self.emotion    = EmotionServiceClient()
         self.state_m    = StateMachine()
         self.smoother   = PositionSmoother()
         self.calibrator = FaceCalibrator()
@@ -256,18 +256,12 @@ class FaceControllerApp(tk.Tk):
 
     def _check_emotion_service_ready(self):
         """Check if emotion service is ready, update GUI status."""
-        if not self.emotion.use_deepface:
-            self.ui_emotion_svc.set("✗ Disabled")
-            return
-        
-        if self.emotion.process and self.emotion.process.is_alive():
-            self.ui_emotion_svc.set("✓ Ready")
+        if self.emotion.ready:
+            self.ui_emotion_svc.set("✓ PyTorch")
             self._emotion_svc_ready = True
-            print("[Main] ✓ Emotion service ready!", flush=True)
+            print("[Main] ✓ Emotion service ready (PyTorch)!", flush=True)
         else:
-            self.ui_emotion_svc.set("⏳ Loading...")
-            # Try again in 1 second
-            self.after(1000, self._check_emotion_service_ready)
+            self.ui_emotion_svc.set("✗ Failed")
 
     def _connect_robot(self):
         if not RTDE_AVAILABLE:
@@ -371,13 +365,7 @@ class FaceControllerApp(tk.Tk):
         self.ui_emotion.set(emotion_text)
         
         # Emotion service status
-        if self.emotion.use_deepface:
-            if self.emotion.process and self.emotion.process.is_alive():
-                svc_status = "✓ Ready"
-            else:
-                svc_status = "⏳ Loading..."
-        else:
-            svc_status = "✗ Disabled"
+        svc_status = "✓ PyTorch" if self.emotion.ready else "✗ Failed"
         self.ui_emotion_svc.set(svc_status)
         
         self.ui_fps.set(f"{1/dt:.1f}")
