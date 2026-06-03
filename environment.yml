@@ -1,0 +1,17 @@
+name: face
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - opencv=4.13.0
+  - numpy
+  - pillow
+  - pip
+  - pip:
+    - cvzone==1.6.1
+    - mediapipe==0.10.14
+    - torch
+    - torchvision
+    - timm
+    - ur-rtde
