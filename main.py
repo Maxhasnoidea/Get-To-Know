@@ -31,6 +31,9 @@ from coordinate_mapping import cam_to_robot, clamp_workspace, servo_track_face
 from robot_controller import RobotController
 from face_detector import FaceDetectorWrapper
 from emotion_service import EmotionServiceClient
+from audio_service import SpeechToTextService
+from llm_service import LLMService
+from voice_service import VoiceService
 
 
 class FaceControllerApp(tk.Tk):
@@ -52,6 +55,9 @@ class FaceControllerApp(tk.Tk):
 
         self.detector   = FaceDetectorWrapper()
         self.emotion    = EmotionServiceClient()
+        self.audio      = SpeechToTextService()
+        self.llm        = LLMService()
+        self.voice      = VoiceService()
         self.state_m    = StateMachine()
         self.smoother   = PositionSmoother()
         self.calibrator = FaceCalibrator()
@@ -159,6 +165,35 @@ class FaceControllerApp(tk.Tk):
             bg="#222", fg="#aaa",
         )
         self.ui_mode_label.pack(anchor="w", pady=(2, 0))
+
+        # Audio / Speech section
+        af = tk.Frame(panel, bg="#222", bd=1, relief="sunken")
+        af.pack(fill="x", pady=(0, 8))
+        tk.Label(af, text="SPEECH INPUT", font=("Courier", 8, "bold"),
+                 bg="#222", fg="#555").pack(anchor="w", padx=8, pady=(6, 2))
+
+        self.mic_btn = tk.Button(
+            af, text="🎤  Start Listening",
+            font=("Helvetica", 10, "bold"), bg="#e67e22", fg="white",
+            activebackground="#d35400", relief="flat", padx=10, pady=6,
+            cursor="hand2", command=self._toggle_listening)
+        self.mic_btn.pack(fill="x", padx=8, pady=(2, 4))
+
+        # VU meter bar
+        meter_frame = tk.Frame(af, bg="#222")
+        meter_frame.pack(fill="x", padx=8, pady=(0, 4))
+        tk.Label(meter_frame, text="Level:", font=("Courier", 7),
+                 bg="#222", fg="#555").pack(side="left")
+        self._vu_canvas = tk.Canvas(meter_frame, height=10, bg="#111",
+                                    bd=0, highlightthickness=0)
+        self._vu_canvas.pack(side="left", fill="x", expand=True, padx=(4, 0))
+        self._vu_bar = self._vu_canvas.create_rectangle(0, 0, 0, 10, fill="#2ecc71", outline="")
+
+        # Last transcript label
+        self.ui_transcript = tk.Label(
+            af, text="—", font=("Helvetica", 8), bg="#222", fg="#aaa",
+            wraplength=220, justify="left", anchor="w")
+        self.ui_transcript.pack(fill="x", padx=8, pady=(2, 8))
 
         # Face calibration
         tk.Button(
@@ -568,10 +603,69 @@ class FaceControllerApp(tk.Tk):
         self.video_label.config(image=tk_img, width=CAM_W, height=CAM_H)
         self.video_label.image = tk_img
 
+    def _toggle_listening(self):
+        if not getattr(self, '_listening', False):
+            self.audio.start()
+            self.llm.start()
+            self.voice.start()
+            self._listening = True
+            self.mic_btn.config(text="⏹  Stop Listening", bg="#c0392b",
+                                activebackground="#a93226")
+            self._poll_audio()
+        else:
+            self.audio.stop()
+            self.llm.stop()
+            self.voice.stop()
+            self._listening = False
+            self.mic_btn.config(text="🎤  Start Listening", bg="#e67e22",
+                                activebackground="#d35400")
+
+    def _poll_audio(self):
+        """Poll mic level and new transcripts every 50 ms."""
+        if not getattr(self, '_listening', False):
+            return
+
+        # Update VU meter
+        level = min(self.audio.current_level * 20, 1.0)  # scale RMS to 0-1
+        w = self._vu_canvas.winfo_width()
+        fill_w = int(w * level)
+        color = "#2ecc71" if level < 0.5 else "#f39c12" if level < 0.8 else "#e74c3c"
+        self._vu_canvas.coords(self._vu_bar, 0, 0, fill_w, 10)
+        self._vu_canvas.itemconfig(self._vu_bar, fill=color)
+
+        # Pause mic recording while robot is speaking to avoid feedback loop
+        self.audio.paused = self.voice.speaking
+
+        # Check for new transcripts → forward to LLM (only when robot is silent)
+        result = self.audio.get_transcript()
+        if result and not self.voice.speaking:
+            short = result.text[:60] + "…" if len(result.text) > 60 else result.text
+            self.ui_transcript.config(text=f'"{short}"', fg="#e0e0e0")
+            print(f"\n>>> HEARD: \"{result.text}\"")
+            print(f"    confidence={result.confidence:.0%}  lang={result.language}\n")
+            emotion_label = self._emotion_display.split()[-1].lower() if self._emotion_display else "neutral"
+            self.llm.submit(
+                text=result.text,
+                emotion=emotion_label,
+                confidence=self._emotion_confidence,
+            )
+
+        # Check for LLM response → speak it
+        response = self.llm.get_response()
+        if response:
+            print(f"\n=== ROBOT SAYS ===\n  {response.text}\n")
+            self.voice.speak(response.text)
+
+        self.after(50, self._poll_audio)
+
     def _on_close(self):
         self._stop_camera()
         self.robot.stop()
-        self.emotion.shutdown()  # Gracefully shutdown emotion service
+        self.emotion.shutdown()
+        if getattr(self, '_listening', False):
+            self.audio.stop()
+            self.llm.stop()
+            self.voice.stop()
         self.destroy()
 
 

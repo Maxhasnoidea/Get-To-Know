@@ -1,11 +1,24 @@
-cd directory
-cd "~/Desktop/Week 6 Toturial"
-cd ~/Desktop/"Week 6 Toturial"
 
+Run Srcritp:
+cd "/Users/macklaus/Desktop/get to know/Reference Code" && conda run -n face python main.py
+
+cd "/Users/macklaus/Desktop/get to know/Reference Code" && conda run -n face python main.py 2>&1
+
+Docker:
+**http://localhost:6080/vnc.html?host=localhost&port=6080**
+
+Run Docker:
+docker run --rm -it \
+  -p 5900:5900 \
+  -p 6080:6080 \
+  -p 29999:29999 \
+  -p 30001-30004:30001-30004 \
+  --name ursim \
+  universalrobots/ursim_cb3
+
+
+
+cd "/Users/macklaus/Desktop/get to know/Reference Code"
 conda env create -f environment.yml
-
-python 01_handtest.py
-python3 01_handtest.py
-
-cd ~/Desktop/"Week 8 Mood Experiment " && conda activate mood_detection && python 02_mood_detection.py &
-
+conda activate face
+python main.py

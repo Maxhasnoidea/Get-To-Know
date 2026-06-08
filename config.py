@@ -5,8 +5,8 @@ Configuration and constants for UR5 Hand Controller
 # ============================================================================
 # ROBOT CONNECTION
 # ============================================================================
-ROBOT_IP = "127.0.0.1"  # URSim via localhost default; change for physical robot
-# ROBOT_IP = "192.168.12.1"
+#ROBOT_IP = "127.0.0.1"  # URSim via localhost default; change for physical robot
+ROBOT_IP = "192.168.12.1"
 RTDE_FREQUENCY = 50  # Hz — servoL command rate
 
 # ============================================================================
