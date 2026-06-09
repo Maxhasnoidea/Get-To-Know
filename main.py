@@ -21,8 +21,9 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 from config import (
-    CAM_INDEX, CAM_W, CAM_H, PLANE_MODE, DEFAULT_POSE, 
-    PLANE_LOCKED_Y, FREEZE_DURATION, RTDE_AVAILABLE, EMOTION_UPDATE_INTERVAL
+    CAM_INDEX, CAM_W, CAM_H, PLANE_MODE, DEFAULT_POSE,
+    PLANE_LOCKED_Y, FREEZE_DURATION, RTDE_AVAILABLE, EMOTION_UPDATE_INTERVAL,
+    WORKSPACE, LASSO_MAX_VEL, EDGE_MARGIN, EDGE_HOLD_DURATION, EDGE_RETURN_Y,
 )
 from models import FaceState
 from state_machine import StateMachine
@@ -72,6 +73,9 @@ class FaceControllerApp(tk.Tk):
         self._emotion_confidence = 0.0
         self._emotion_svc_ready = False  # Track if emotion service is ready
         self._plane_mode = PLANE_MODE
+        self._lost_at_edge    = False  # True when face was lost while robot at workspace edge
+        self._edge_y_reached  = False  # True once Y has arrived at EDGE_RETURN_Y
+        self._edge_hold_start = 0.0   # time.time() when the 20s wait begins (after Y arrives)
 
         # Plane mode as a runtime Tkinter variable
         self._plane_mode_var = tk.BooleanVar(value=PLANE_MODE)
@@ -466,6 +470,9 @@ class FaceControllerApp(tk.Tk):
 
         if cur == StateMachine.TRACKING:
             if not face.detected:
+                if self._at_workspace_edge():
+                    self._lost_at_edge   = True
+                    self._edge_y_reached = False  # timer starts only after Y arrives
                 sm.transition(StateMachine.FROZEN, "face lost")
                 self._reset_smoother()
                 return self._default_target()
@@ -498,8 +505,17 @@ class FaceControllerApp(tk.Tk):
 
         if cur == StateMachine.RETURNING:
             if face.detected and face.count == 1:
+                self._lost_at_edge   = False
+                self._edge_y_reached = False
                 sm.transition(StateMachine.STABILIZING, "face appeared")
             elif self.smoother.lasso_pos is not None:
+                if self._lost_at_edge:
+                    target = self._hold_target()   # drifts Y; sets timer when Y arrives
+                    if self._edge_y_reached and time.time() - self._edge_hold_start >= EDGE_HOLD_DURATION:
+                        self._lost_at_edge   = False
+                        self._edge_y_reached = False  # 20s expired → fall through to home
+                    else:
+                        return target
                 dist = np.linalg.norm(self.smoother.lasso_pos - np.array(home_xyz))
                 if dist < 0.01:
                     sm.transition(StateMachine.IDLE, "reached home")
@@ -546,6 +562,32 @@ class FaceControllerApp(tk.Tk):
         if self.smoother.lasso_pos is not None:
             self.smoother.ema_pos = self.smoother.lasso_pos.copy()
         self.calibrator.reset()
+
+    def _at_workspace_edge(self) -> bool:
+        if self.smoother.lasso_pos is None:
+            return False
+        px, py, pz = self.smoother.lasso_pos
+        m = EDGE_MARGIN
+        return (
+            px < WORKSPACE['x'][0] + m or px > WORKSPACE['x'][1] - m or
+            py < WORKSPACE['y'][0] + m or py > WORKSPACE['y'][1] - m or
+            pz < WORKSPACE['z'][0] + m or pz > WORKSPACE['z'][1] - m
+        )
+
+    def _hold_target(self) -> list:
+        """Hold X/Z in place; slowly drift Y to EDGE_RETURN_Y, then start 20s timer."""
+        home = self.robot.home_pose
+        pos = self.smoother.lasso_pos.copy()
+        y_step = (LASSO_MAX_VEL / 2.0) * 0.033
+        pos[1] += np.clip(EDGE_RETURN_Y - pos[1], -y_step, y_step)
+        if not self._edge_y_reached and abs(pos[1] - EDGE_RETURN_Y) < 0.005:
+            self._edge_y_reached  = True
+            self._edge_hold_start = time.time()
+            print("[Edge] Y at EDGE_RETURN_Y — 20 s hold begins")
+        pos = clamp_workspace(pos)
+        self.smoother.lasso_pos = pos
+        self.smoother.ema_pos   = pos
+        return list(pos) + list(home[3:])
 
     def _default_target(self) -> list:
         home = self.robot.home_pose

@@ -16,7 +16,8 @@ docker run --rm -it \
   --name ursim \
   universalrobots/ursim_cb3
 
-
-
 cd "/Users/macklaus/Desktop/get to know"
 conda activate face && python main.py
+
+Robot IP:
+192.168.12.1

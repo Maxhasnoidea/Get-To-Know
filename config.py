@@ -5,8 +5,8 @@ Configuration and constants for UR5 Hand Controller
 # ============================================================================
 # ROBOT CONNECTION
 # ============================================================================
-ROBOT_IP = "127.0.0.1"  # URSim via localhost default; change for physical robot
-#ROBOT_IP = "192.168.12.1"
+#ROBOT_IP = "127.0.0.1"  # URSim via localhost default; change for physical robot
+ROBOT_IP = "192.168.12.1"
 RTDE_FREQUENCY = 50  # Hz — servoL command rate
 
 # ============================================================================
@@ -20,9 +20,9 @@ CAM_W, CAM_H = 1280, 720  # Display resolution (good balance for GUI + content)
 # ============================================================================
 # Center of this box: X=0.025, Y=-0.425, Z=0.325
 WORKSPACE = {
-    'x': (-0.430,  0.480),
+    'x': (-0.400,  0.400),
     'y': (-0.750, -0.100),
-    'z': ( 0.050,  0.600),
+    'z': ( 0.050,  0.700),
 }
 
 # ============================================================================
@@ -70,6 +70,13 @@ DEADBAND_M    = 0.003   # movements below this (m) are ignored — prevents micr
 FREEZE_DURATION  = 0.5   # seconds robot holds position after edge case triggers
 STABILIZE_FRAMES = 5     # frames of stable single-face detection before tracking
 JUMP_THRESHOLD_M = 0.40  # position jump larger than this (m) triggers a freeze
+
+# When face is lost inside the edge margin zone: X/Z hold in place, Y slowly
+# returns to EDGE_RETURN_Y. After EDGE_HOLD_DURATION seconds the full home
+# return starts.
+EDGE_MARGIN        = 0.20   # meters inward from each workspace boundary = "edge zone"
+EDGE_HOLD_DURATION = 20.0   # seconds before full home return begins
+EDGE_RETURN_Y      = -0.250 # Y target during edge hold (meters)
 
 # ============================================================================
 # ROBOT SERVO PARAMETERS
