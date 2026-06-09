@@ -169,7 +169,7 @@ class RobotController:
                 return False
 
             actual = self.rtde_r.getActualTCPPose()
-            self.home_pose = list(DEFAULT_POSE)   # use known pose, not FK
+            self.home_pose = list(actual)  # use real FK so orientation matches HOME_JOINTS
 
             print(f"[Robot] FK confirmation: "
                   f"({actual[0]:+.3f}, {actual[1]:+.3f}, {actual[2]:+.3f})")

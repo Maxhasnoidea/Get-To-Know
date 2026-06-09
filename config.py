@@ -5,8 +5,8 @@ Configuration and constants for UR5 Hand Controller
 # ============================================================================
 # ROBOT CONNECTION
 # ============================================================================
-#ROBOT_IP = "127.0.0.1"  # URSim via localhost default; change for physical robot
-ROBOT_IP = "192.168.12.1"
+ROBOT_IP = "127.0.0.1"  # URSim via localhost default; change for physical robot
+#ROBOT_IP = "192.168.12.1"
 RTDE_FREQUENCY = 50  # Hz — servoL command rate
 
 # ============================================================================
@@ -61,15 +61,15 @@ PALM_BASELINE_FRAMES = 30     # frames averaged to establish initial baseline
 # ============================================================================
 # Exponential Moving Average (EMA) — lower = smoother + more lag
 EMA_ALPHA     = 0.10    # good range: 0.08-0.20
-LASSO_MAX_VEL = 0.06    # max robot speed (m/s) under lasso constraint
+LASSO_MAX_VEL = 0.12    # max robot speed (m/s) under lasso constraint
 DEADBAND_M    = 0.003   # movements below this (m) are ignored — prevents micro-jitter
 
 # ============================================================================
 # EDGE CASE HANDLING
 # ============================================================================
-FREEZE_DURATION  = 2.0   # seconds robot holds position after edge case triggers
-STABILIZE_FRAMES = 15    # frames of stable single-face detection before tracking
-JUMP_THRESHOLD_M = 0.3  # position jump larger than this (m) triggers a freeze
+FREEZE_DURATION  = 0.5   # seconds robot holds position after edge case triggers
+STABILIZE_FRAMES = 5     # frames of stable single-face detection before tracking
+JUMP_THRESHOLD_M = 0.40  # position jump larger than this (m) triggers a freeze
 
 # ============================================================================
 # ROBOT SERVO PARAMETERS

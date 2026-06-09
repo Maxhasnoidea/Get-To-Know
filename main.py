@@ -481,7 +481,13 @@ class FaceControllerApp(tk.Tk):
                 sm.transition(StateMachine.IDLE, "lost during stabilize")
                 return self._default_target()
             if sm.tick_stabilize():
-                init = servo_track_face(face.cx, face.cy, self.robot.home_pose)
+                # Seed smoother at robot's current position so the first tracking
+                # frame doesn't snap — the EMA will pull toward the face smoothly.
+                actual = self.robot.get_actual_pose()
+                if actual:
+                    init = np.array(actual[:3])
+                else:
+                    init = np.array(self.robot.home_pose[:3])
                 self.smoother.reset(init)
                 sm.transition(StateMachine.TRACKING, "stabilized")
             return self._default_target()

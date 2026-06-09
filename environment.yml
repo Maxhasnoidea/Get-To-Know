@@ -4,14 +4,19 @@ channels:
   - defaults
 dependencies:
   - python=3.10
-  - opencv=4.13.0
   - numpy
   - pillow
+  - ffmpeg
   - pip
   - pip:
+    - opencv-contrib-python
     - cvzone==1.6.1
     - mediapipe==0.10.14
     - torch
     - torchvision
     - timm
+    - transformers
+    - openai-whisper
+    - sounddevice
+    - requests
     - ur-rtde
