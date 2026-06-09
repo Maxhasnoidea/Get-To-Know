@@ -5,7 +5,7 @@ cd "/Users/macklaus/Desktop/get to know/Reference Code" && conda run -n face pyt
 cd "/Users/macklaus/Desktop/get to know/Reference Code" && conda run -n face python main.py 2>&1
 
 Docker:
-**http://localhost:6080/vnc.html?host=localhost&port=6080**
+http://localhost:6080/vnc.html?host=localhost&port=6080
 
 Run Docker:
 docker run --rm -it \
@@ -18,5 +18,5 @@ docker run --rm -it \
 
 
 
-cd "/Users/macklaus/Desktop/get to know/Reference Code"
+cd "/Users/macklaus/Desktop/get to know"
 conda activate face && python main.py

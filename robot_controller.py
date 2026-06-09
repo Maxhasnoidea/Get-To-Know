@@ -173,9 +173,6 @@ class RobotController:
 
             print(f"[Robot] FK confirmation: "
                   f"({actual[0]:+.3f}, {actual[1]:+.3f}, {actual[2]:+.3f})")
-            print(f"[Robot] Using hardcoded home_pose: "
-                  f"({DEFAULT_POSE[0]:+.3f}, {DEFAULT_POSE[1]:+.3f}, {DEFAULT_POSE[2]:+.3f})")
-
             print("[Robot] Home pose (FK of HOME_JOINTS):")
             print(f"  position    = "
                   f"({actual[0]:+.3f}, {actual[1]:+.3f}, {actual[2]:+.3f}) m")
@@ -196,6 +193,18 @@ class RobotController:
             print(f"[Robot] Homing failed: {e}")
             self._log_status("at exception")
             return False
+
+    def pause_servo(self):
+        """Stop the servo loop thread while keeping the RTDE connection alive."""
+        self._running = False
+        if self.rtde_c:
+            try:
+                self.rtde_c.servoStop()
+            except Exception:
+                pass
+        if self._thread:
+            self._thread.join(timeout=1.0)
+            self._thread = None
 
     def start(self):
         if not self.connected:

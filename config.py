@@ -36,7 +36,7 @@ PLANE_LOCKED_Y  = -0.536   # meters — Y frozen here; derived from DEFAULT_POSE
 # Homing pose in joint space. Captured by free-driving the robot to a
 # desired starting pose and reading getActualQ() on the pendant.
 # [base, shoulder, elbow, wrist1, wrist2, wrist3]
-HOME_JOINTS = [+1.525, -1.410, +1.198, +0.238, +1.584, +1.809]  # rad
+HOME_JOINTS = [+1.525, -1.410, +1.198, -2.904, -1.558, +1.809]  # rad
 
 # Homing motion parameters — kept conservative.
 HOME_JOINT_VELOCITY     = 0.5    # rad/s

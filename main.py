@@ -113,7 +113,14 @@ class FaceControllerApp(tk.Tk):
             font=("Helvetica", 11, "bold"), bg="#3498db", fg="white",
             activebackground="#2980b9", relief="flat", padx=12, pady=8,
             cursor="hand2", command=self._connect_robot)
-        self.robot_btn.pack(fill="x", pady=(0, 14))
+        self.robot_btn.pack(fill="x", pady=(0, 6))
+
+        self.home_btn = tk.Button(
+            panel, text="⌂  Go Home",
+            font=("Helvetica", 11, "bold"), bg="#7f8c8d", fg="white",
+            activebackground="#636e72", relief="flat", padx=12, pady=8,
+            cursor="hand2", command=self._go_home, state="disabled")
+        self.home_btn.pack(fill="x", pady=(0, 14))
 
         # Status section
         sf = tk.Frame(panel, bg="#222", bd=1, relief="sunken")
@@ -335,6 +342,34 @@ class FaceControllerApp(tk.Tk):
         self.ui_robot.set("connected")
         self.robot_btn.config(text="✓  Robot Ready", bg="#27ae60",
                               state="normal")
+        self.home_btn.config(state="normal", bg="#e67e22",
+                             activebackground="#d35400")
+
+    def _go_home(self):
+        if not self.robot.connected:
+            return
+        self.home_btn.config(text="⌂  Homing…", bg="#f39c12",
+                             activebackground="#e67e22", state="disabled")
+        self.ui_robot.set("homing…")
+        threading.Thread(target=self._go_home_worker,
+                         daemon=True, name="go-home").start()
+
+    def _go_home_worker(self):
+        self.robot.pause_servo()
+        ok = self.robot.home()
+        if ok:
+            self.robot.start()
+        self.after(0, lambda: self._on_go_home_done(ok))
+
+    def _on_go_home_done(self, ok: bool):
+        if ok:
+            self.ui_robot.set("connected")
+            self.home_btn.config(text="⌂  Go Home", bg="#e67e22",
+                                 activebackground="#d35400", state="normal")
+        else:
+            self.ui_robot.set("home FAILED")
+            self.home_btn.config(text="✗  Home Failed", bg="#e74c3c",
+                                 activebackground="#c0392b", state="normal")
 
     # ── Frame loop ─────────────────────────────────────────────────────────────
 
